@@ -46,7 +46,7 @@ const App = (() => {
     $('#signup').onclick=async()=>{const email=$('#email').value,password=$('#password').value; const {data,error}=await sb.auth.signUp({email,password}); if(error)return toast(error.message); if(data.user){await sb.from('profiles').upsert({id:data.user.id,email,full_name:email.split('@')[0],role:'admin'}); toast('Account created. Check email if Supabase requires confirmation, then sign in.')}};
   }
   function renderShell(){
-    document.body.innerHTML=`<div class="app"><aside class="sidebar" id="side"><div class="logo"><img class="brandLogo" src="assets/amin-logo-full.png" alt="Amin Ventures full logo"></div><nav class="nav">${navBtn('dashboard','⌂','Dashboard')}${navBtn('projects','▣','Projects')}${navBtn('site_reports','◷','Site Reports')}${navBtn('plans','▤','Plans')}${navBtn('tasks','☑','Punch List')}${navBtn('photos','▧','Photos')}${navBtn('daily_logs','◷','Daily Logs')}${navBtn('rfis','?','RFIs')}${navBtn('subcontractors','♟','Subcontractors')}${navBtn('reports','▥','Reports')}${navBtn('users','◉','Team / Roles')}</nav><div class="userbox"><b>${esc(profile.full_name||profile.email)}</b><br>${esc(profile.role)}<br><span class="muted">${esc(profile.email)}</span><br><br><div class="muted" style="margin-top:10px">AV Field v5.9 • Connected</div><button class="btn ghost" id="signout">Sign out</button></div></aside><main class="main"><header class="topbar"><button class="btn mobileMenu" id="menu">☰</button><input class="search" id="search" value="${esc(searchTerm)}" placeholder="Search projects, tasks, plans..."><div class="top-actions"><button class="btn" id="sync">Sync</button><button class="btn gold" id="quickTask">+ Site Report</button></div></header><section class="content" id="view"></section></main></div>`;
+    document.body.innerHTML=`<div class="app"><aside class="sidebar" id="side"><div class="logo"><img class="brandLogo" src="assets/amin-logo-full.png" alt="Amin Ventures full logo"></div><nav class="nav">${navBtn('dashboard','⌂','Dashboard')}${navBtn('projects','▣','Projects')}${navBtn('site_reports','◷','Site Reports')}${navBtn('plans','▤','Plans')}${navBtn('tasks','☑','Punch List')}${navBtn('photos','▧','Photos')}${navBtn('daily_logs','◷','Daily Logs')}${navBtn('rfis','?','RFIs')}${navBtn('subcontractors','♟','Subcontractors')}${navBtn('reports','▥','Reports')}${navBtn('users','◉','Team / Roles')}</nav><div class="userbox"><b>${esc(profile.full_name||profile.email)}</b><br>${esc(profile.role)}<br><span class="muted">${esc(profile.email)}</span><br><br><div class="muted" style="margin-top:10px">AV Field v5.11 • Connected</div><button class="btn ghost" id="signout">Sign out</button></div></aside><main class="main"><header class="topbar"><button class="btn mobileMenu" id="menu">☰</button><input class="search" id="search" value="${esc(searchTerm)}" placeholder="Search projects, tasks, plans..."><div class="top-actions"><button class="btn" id="sync">Sync</button><button class="btn gold" id="quickTask">+ Site Report</button></div></header><section class="content" id="view"></section></main></div>`;
     $('#signout').onclick=async()=>{await sb.auth.signOut();location.reload()}; $('#sync').onclick=async()=>{await loadAll(); renderView();}; $('#quickTask').onclick=()=>openForm('site_reports'); $('#menu').onclick=()=>$('#side').classList.toggle('open'); $('#search').oninput=e=>{searchTerm=e.target.value.trim(); renderView();}; document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{active=b.dataset.nav;searchTerm='';renderShell()}); renderView();
   }
   function navBtn(k,i,l){return `<button data-nav="${k}" class="${active===k?'active':''}"><span>${i}</span>${l}</button>`}
@@ -114,7 +114,7 @@ const App = (() => {
 
   function cloudSetupPage(){
     const c=cfg()||{};
-    return `<div class="between"><div><h1>Cloud Setup</h1><p class="muted">Supabase is pre-configured for Amin Ventures. You can update or verify the connection here if needed.</p></div></div><br><div class="card"><div class="alert"><b>Status:</b> AV Field v5.9 package. Photos use Supabase Storage bucket <b>jobsite-photos</b>. Data uses Supabase database tables.</div><br><div class="field"><label>Supabase Project URL</label><input id="cloud_url" value="${esc(c.url||'')}" placeholder="https://xxxx.supabase.co"></div><br><div class="field"><label>Supabase Publishable / anon public key</label><textarea id="cloud_key" placeholder="sb_publishable_... or eyJ...">${esc(c.anonKey||'')}</textarea></div><br><button class="btn gold" id="saveCloud">Save Cloud Settings</button> <button class="btn ghost" id="resetCloud">Reset Cloud Settings</button><br><br><p class="muted">After saving, the app refreshes and reconnects to Supabase. Do not use the secret/service_role key.</p></div>`
+    return `<div class="between"><div><h1>Cloud Setup</h1><p class="muted">Supabase is pre-configured for Amin Ventures. You can update or verify the connection here if needed.</p></div></div><br><div class="card"><div class="alert"><b>Status:</b> AV Field v5.11 package. Photos use Supabase Storage bucket <b>jobsite-photos</b>. Data uses Supabase database tables.</div><br><div class="field"><label>Supabase Project URL</label><input id="cloud_url" value="${esc(c.url||'')}" placeholder="https://xxxx.supabase.co"></div><br><div class="field"><label>Supabase Publishable / anon public key</label><textarea id="cloud_key" placeholder="sb_publishable_... or eyJ...">${esc(c.anonKey||'')}</textarea></div><br><button class="btn gold" id="saveCloud">Save Cloud Settings</button> <button class="btn ghost" id="resetCloud">Reset Cloud Settings</button><br><br><p class="muted">After saving, the app refreshes and reconnects to Supabase. Do not use the secret/service_role key.</p></div>`
   }
 
   function usersPage(){return `<div class="between"><div><h1>Team / Roles</h1><p class="muted">Review users and update field access roles.</p></div></div><br><div class="card" id="usersBox"><button class="btn" id="loadUsers">Load Profiles</button></div>`}
@@ -220,18 +220,160 @@ const App = (() => {
   async function savePhotos(){const files=[...selectedPhotoFiles]; if(!files.length)return toast('Choose at least one photo.'); const meta=collect('photos'); if(!meta.project_id)return toast('Choose a project before saving photos.'); for(const f of files){const safeName=f.name.replace(/[^a-z0-9_.-]/gi,'_'); const path=`${meta.project_id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName}`; const up=await sb.storage.from('jobsite-photos').upload(path,f,{upsert:false,contentType:f.type||'image/jpeg'}); if(up.error)return toast(up.error.message); const signed=await sb.storage.from('jobsite-photos').createSignedUrl(path, 60*60*24*365); if(signed.error)return toast(signed.error.message); const photoUrl=signed.data?.signedUrl||''; const photoRecord={...meta,url:photoUrl,storage_path:path,file_name:f.name,file_size:f.size,mime_type:f.type||'image/jpeg',uploaded_by:user?.id||null}; const ins=await sb.from('photos').insert(photoRecord); if(ins.error)return toast(ins.error.message); } selectedPhotoFiles=[]; $('.modal').remove(); await loadAll(); renderView()}
   async function delRecord(t,recordId){if(!canEdit())return toast('Your role does not allow deleting.'); if(!confirm('Delete this item? This cannot be undone.'))return; if(t==='projects'){await Promise.all(['site_reports','plans','tasks','photos','daily_logs','rfis'].map(x=>sb.from(x).delete().eq('project_id',recordId)))} if(t==='site_reports'){const photos=cache.photos.filter(x=>x.report_id===recordId); const paths=photos.map(p=>p.storage_path).filter(Boolean); if(paths.length) await sb.storage.from('jobsite-photos').remove(paths); await sb.from('photos').delete().eq('report_id',recordId);} if(t==='photos'){const p=cache.photos.find(x=>x.id===recordId); if(p?.storage_path) await sb.storage.from('jobsite-photos').remove([p.storage_path]);} const {error}=await sb.from(t).delete().eq('id',recordId); if(error)return toast(error.message); await loadAll(); renderView()}
   function exportCSV(t){const rows=cache[t]||[]; if(!rows.length)return toast('No data.'); const cols=Object.keys(rows[0]); const csv=[cols.join(','),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replaceAll('"','""')}"`).join(','))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`amin_ventures_${t}.csv`; a.click()}
-  async function makePDF(type){const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'pt',format:'letter'}); let y=54; const W=612,H=792,M=42; const title=type==='site_reports'?'Site Report Package':type==='daily'?'Daily Field Report':type==='tasks'?'Punch List Report':'Photo Report'; const addHeader=()=>{doc.setFillColor(7,7,7);doc.rect(0,0,W,48,'F');doc.setTextColor(201,152,58);doc.setFontSize(16);doc.text('AMIN VENTURES',M,30);doc.setTextColor(20,20,20);doc.setFontSize(10);}; const line=(txt,size=10)=>{if(y>H-60){doc.addPage();addHeader();y=70} doc.setFontSize(size); doc.setTextColor(30,30,30); const parts=doc.splitTextToSize(String(txt||''),W-M*2); doc.text(parts,M,y); y+=parts.length*14+5}; addHeader(); y=76; doc.setFontSize(22);doc.setTextColor(0,0,0);doc.text(title,M,y); y+=28; line(`Generated: ${new Date().toLocaleString()}`);
-    if(type==='site_reports') for(const r of cache.site_reports){line(`${projectName(r.project_id)} — ${r.report_date||''}`,13); line(`Submitted by: ${reportSubmitter(r)} | Weather: ${r.weather||''} | Manpower: ${r.manpower||0}`); line(`Work completed: ${r.work_completed||''}`); line(`Issues/Delays: ${r.issues||''}`); line(`Safety: ${r.safety_notes||''}`); for(const p of reportPhotos(r.id)){try{const img=await imageToDataUrl(p.url); const dims=fitToBox(img.w,img.h,240,300); if(y+dims.h>H-50){doc.addPage();addHeader();y=70} doc.addImage(img.data,'JPEG',M,y,dims.w,dims.h); y+=dims.h+12;}catch{line('[Photo could not be embedded due to CORS/storage settings]')}} y+=10}
-    if(type==='tasks') cache.tasks.forEach(t=>{line(`${t.title} — ${projectName(t.project_id)}`,13); line(`Location: ${t.location||''} | Priority: ${t.priority||''} | Status: ${t.status||''} | Due: ${t.due_date||''}`); line(`Notes: ${t.notes||''}`); y+=7});
-    if(type==='daily') cache.daily_logs.forEach(l=>{line(`${projectName(l.project_id)} — ${l.log_date}`,13); line(`Weather: ${l.weather||''} | Manpower: ${l.manpower||''}`); line(`Work completed: ${l.work_completed||''}`); line(`Delays/Safety: ${l.delays||''}`); y+=7});
-    if(type==='photos') for(const p of cache.photos){line(`${projectName(p.project_id)} — ${p.location||''}`,13); line(`${p.category||''} | ${new Date(p.created_at).toLocaleString()} | ${p.notes||''}`); try{const img=await imageToDataUrl(p.url); const dims=fitToBox(img.w,img.h,280,360); if(y+dims.h>H-50){doc.addPage();addHeader();y=70} doc.addImage(img.data,'JPEG',M,y,dims.w,dims.h); y+=dims.h+16;}catch{line('[Photo could not be embedded due to CORS/storage settings]')}}
-    doc.save(`Amin_Ventures_${title.replaceAll(' ','_')}.pdf`)}
+  async function makePDF(type){
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({unit:'pt',format:'letter',compress:false});
+    const W=612,H=792,M=42,HEADER=104;
+    const title=type==='site_reports'?'Site Report Package':type==='daily'?'Daily Field Report':type==='tasks'?'Punch List Report':'Photo Report';
+    let y=HEADER+32;
+    const logo=await imageToDataUrl('assets/amin-logo-full.png','PNG').catch(()=>null);
+    const generated=new Date().toLocaleString();
+    const pageCount=()=>doc.internal.getNumberOfPages();
+    const addHeader=()=>{
+      doc.setFillColor(7,7,7);
+      doc.rect(0,0,W,HEADER,'F');
+      doc.setTextColor(201,152,58);
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(10);
+      doc.text('AMIN VENTURES',M,28);
+      doc.setTextColor(255,255,255);
+      doc.setFontSize(22);
+      doc.text(title,M,58);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(9);
+      doc.setTextColor(190,184,174);
+      doc.text(`Generated: ${generated}`,M,80);
+      if(logo){
+        const box=fitToBox(logo.w,logo.h,132,82);
+        doc.addImage(logo.data,logo.format,W-M-box.w,11,box.w,box.h,undefined,'NONE');
+      }
+    };
+    const addFooter=()=>{
+      const page=pageCount();
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(125,125,125);
+      doc.text(`Page ${page}`,W-M,H-24,{align:'right'});
+    };
+    const newPage=()=>{addFooter(); doc.addPage(); addHeader(); y=HEADER+32;};
+    const ensure=(height)=>{if(y+height>H-48)newPage();};
+    const text=(txt,size=10,color=[35,35,35],style='normal',width=W-M*2)=>{
+      doc.setFont('helvetica',style);
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      const parts=doc.splitTextToSize(String(txt||''),width);
+      doc.text(parts,M,y);
+      y+=parts.length*(size+4)+5;
+    };
+    const rule=()=>{doc.setDrawColor(218,218,218);doc.line(M,y,W-M,y);y+=16;};
+    const section=(heading)=>{ensure(42); doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(20,20,20);doc.text(heading,M,y);y+=18; rule();};
+    const field=(label,value)=>{
+      if(value===null||value===undefined||value==='') return;
+      ensure(34);
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(120,92,34);doc.text(label.toUpperCase(),M,y);
+      y+=13;
+      text(value,10,[32,32,32],'normal');
+    };
+    const addPhoto=async(photo,caption='')=>{
+      try{
+        const img=await imageToDataUrl(photo.url,'JPEG');
+        const isPortrait=img.h>=img.w;
+        const maxW=isPortrait?330:W-M*2;
+        const maxH=isPortrait?540:380;
+        const dims=fitToBox(img.w,img.h,maxW,maxH);
+        const blockH=dims.h+(caption?44:24);
+        if(y+blockH>H-50)newPage();
+        if(caption){
+          doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(20,20,20);
+          const c=doc.splitTextToSize(caption,W-M*2);
+          doc.text(c,M,y);
+          y+=c.length*13+8;
+        }
+        const x=M+((W-M*2)-dims.w)/2;
+        doc.addImage(img.data,'JPEG',x,y,dims.w,dims.h,undefined,'NONE');
+        y+=dims.h+20;
+      }catch{
+        field('Photo', 'Photo could not be embedded due to storage or browser CORS settings.');
+      }
+    };
+
+    addHeader();
+    section(title);
+
+    if(type==='site_reports'){
+      for(const r of cache.site_reports){
+        section(`${projectName(r.project_id)} • ${r.report_date||''}`);
+        field('Submitted By', reportSubmitter(r));
+        field('Weather', r.weather);
+        field('Manpower', r.manpower||0);
+        field('Work Completed', r.work_completed);
+        field('Issues / Delays', r.issues);
+        field('Safety Notes', r.safety_notes);
+        const photos=reportPhotos(r.id);
+        if(photos.length){
+          section('Attached Photos');
+          for(const p of photos) await addPhoto(p,`${p.category||'Progress'} • ${p.location||'Site Report'}`);
+        }
+      }
+    }
+    if(type==='tasks'){
+      for(const t of cache.tasks){
+        section(t.title||'Punch Item');
+        field('Project', projectName(t.project_id));
+        field('Location', t.location);
+        field('Priority', t.priority);
+        field('Status', t.status);
+        field('Due Date', t.due_date);
+        field('Assignee', t.assignee);
+        field('Notes', t.notes);
+      }
+    }
+    if(type==='daily'){
+      for(const l of cache.daily_logs){
+        section(`${projectName(l.project_id)} • ${l.log_date||''}`);
+        field('Weather', l.weather);
+        field('Manpower', l.manpower);
+        field('Work Completed', l.work_completed);
+        field('Delays / Safety', l.delays);
+      }
+    }
+    if(type==='photos'){
+      for(const p of cache.photos){
+        section(`${projectName(p.project_id)} • ${p.location||'Field Photo'}`);
+        field('Category', p.category||'Progress');
+        field('Date', p.created_at?new Date(p.created_at).toLocaleString():'');
+        field('Notes', p.notes);
+        await addPhoto(p,`${p.category||'Progress'} • ${p.location||projectName(p.project_id)}`);
+      }
+    }
+    addFooter();
+    doc.save(`Amin_Ventures_${title.replaceAll(' ','_')}.pdf`);
+  }
   function fitToBox(srcW,srcH,maxW,maxH){
     const w=Number(srcW)||maxW, h=Number(srcH)||maxH;
-    const scale=Math.min(maxW/w,maxH/h);
+    const scale=Math.min(maxW/w,maxH/h,1);
     return {w:w*scale,h:h*scale};
   }
-  function imageToDataUrl(url){return new Promise((resolve,reject)=>{const img=new Image(); img.crossOrigin='anonymous'; img.onload=()=>{const c=document.createElement('canvas');const w=img.naturalWidth||img.width;const h=img.naturalHeight||img.height;c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);resolve({data:c.toDataURL('image/jpeg',.92),w,h})}; img.onerror=reject; img.src=url})}
+  function imageToDataUrl(url,format='JPEG'){
+    return new Promise((resolve,reject)=>{
+      const img=new Image();
+      img.crossOrigin='anonymous';
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        const w=img.naturalWidth||img.width;
+        const h=img.naturalHeight||img.height;
+        c.width=w;c.height=h;
+        const ctx=c.getContext('2d');
+        ctx.imageSmoothingEnabled=true;
+        ctx.imageSmoothingQuality='high';
+        ctx.drawImage(img,0,0,w,h);
+        const isPng=format==='PNG'||/\.png($|\?)/i.test(url);
+        resolve({data:c.toDataURL(isPng?'image/png':'image/jpeg',.98),w,h,format:isPng?'PNG':'JPEG'});
+      };
+      img.onerror=reject;
+      img.src=url;
+    });
+  }
   return {start};
 })();
 window.addEventListener('load',App.start);

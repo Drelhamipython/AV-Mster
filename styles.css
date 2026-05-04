@@ -51,3 +51,119 @@
   .reportCards,.reportDetail{grid-template-columns:1fr}
   .reportLine{flex-direction:column}
 }
+
+
+/* v5.11 right workspace palette: bright, calm, and distinct from sidebar */
+.main{
+  background:
+    linear-gradient(135deg,rgba(255,255,255,.78),rgba(244,240,231,.92) 42%,rgba(228,236,232,.86)),
+    radial-gradient(circle at 84% 12%,rgba(72,115,103,.16),transparent 32%),
+    #f6f2ea;
+  color:#1c2624;
+}
+.topbar{
+  background:rgba(251,249,244,.86);
+  border-bottom:1px solid rgba(48,75,68,.12);
+  box-shadow:0 14px 36px rgba(31,42,38,.08);
+}
+.main .content{padding:34px}
+.main h1{color:#17211f}
+.main h2{color:#1d2926}
+.main .muted{color:#66716c}
+.main .search{
+  background:#fffdf8;
+  border:1px solid rgba(47,77,69,.18);
+  color:#1c2624;
+  box-shadow:0 8px 24px rgba(39,54,49,.08);
+}
+.main .search:focus,.field input:focus,.field select:focus,.field textarea:focus{
+  outline:0;
+  border-color:rgba(45,103,88,.55);
+  box-shadow:0 0 0 4px rgba(45,103,88,.12);
+}
+.main .btn,.modalbox .btn{
+  background:#fffdf8;
+  border-color:rgba(42,63,58,.16);
+  color:#21302d;
+  box-shadow:0 8px 18px rgba(43,52,49,.07);
+}
+.main .btn:hover,.modalbox .btn:hover{background:#f4f8f4;border-color:rgba(45,103,88,.28)}
+.main .btn.gold,.modalbox .btn.gold{
+  background:linear-gradient(135deg,#2f6d5c,#4d907d);
+  border-color:#79ad9c;
+  color:#fff;
+  box-shadow:0 12px 26px rgba(47,109,92,.24);
+}
+.main .btn.ghost,.modalbox .btn.ghost{background:rgba(255,255,255,.42);color:#30423d}
+.main .btn.danger,.modalbox .btn.danger{
+  background:#fff1ef;
+  border-color:rgba(190,75,66,.28);
+  color:#9f3129;
+}
+.main .card{
+  background:rgba(255,253,248,.82);
+  border:1px solid rgba(58,84,77,.12);
+  box-shadow:0 20px 50px rgba(46,58,54,.11);
+}
+.main .stat{
+  background:linear-gradient(180deg,#fffefb,#f3f5ef);
+  border-color:rgba(47,109,92,.14);
+}
+.main .stat .label{color:#6e766f}
+.main .stat .value{color:#18231f}
+.main .stat .sub{color:#8a6a27}
+.main .table th{
+  color:#65716b;
+  background:#f6f3ea;
+  border-bottom:1px solid rgba(45,62,57,.12);
+}
+.main .table td{border-bottom:1px solid rgba(45,62,57,.09);color:#25302d}
+.main .pill{
+  background:#eef7f1;
+  border-color:rgba(47,109,92,.18);
+  color:#2f6d5c;
+}
+.main .pill.green{background:#eaf7ef;color:#23704b;border-color:rgba(35,112,75,.22)}
+.main .pill.yellow{background:#fff6df;color:#8a6420;border-color:rgba(167,119,35,.22)}
+.main .pill.red{background:#fff0ed;color:#a53b31;border-color:rgba(165,59,49,.22)}
+.main .photo,.main .reportCard{
+  background:#fffdf8;
+  border-color:rgba(58,84,77,.13);
+  box-shadow:0 14px 32px rgba(46,58,54,.08);
+}
+.main .reportSummary p{color:#69736f}
+.main .reportLine{border-top-color:rgba(45,62,57,.1)}
+.modal{background:rgba(14,22,20,.58);backdrop-filter:blur(6px)}
+.modalbox{
+  background:#fbf8f0;
+  color:#1c2624;
+  border-color:rgba(47,109,92,.22);
+  box-shadow:0 34px 90px rgba(16,25,22,.28);
+}
+.modalbox h1,.modalbox h2{color:#17211f}
+.modalbox .muted{color:#66716c}
+.field label{color:#54615c}
+.field input,.field select,.field textarea{
+  background:#fffdf8;
+  color:#1c2624;
+  border-color:rgba(47,77,69,.18);
+}
+.alert{
+  border-color:rgba(138,106,39,.28);
+  background:#fff7df;
+  color:#6c5018;
+}
+@media(max-width:640px){
+  .main .content{padding:18px}
+}
+.loginbox .field label{color:var(--muted)}
+.loginbox .field input,.loginbox .field textarea,.loginbox .field select{
+  background:#0b0b0c;
+  color:#fff;
+  border-color:rgba(255,255,255,.14);
+}
+.loginbox .alert{
+  border-color:rgba(243,190,76,.35);
+  background:rgba(243,190,76,.09);
+  color:#ffe4a7;
+}
