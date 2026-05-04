@@ -8,3 +8,32 @@
 .loginbox .brandLogo{width:280px;height:150px;object-fit:contain;object-position:left center}
 .mark,.brand{display:none!important}
 @media(max-width:900px){.brandLogo{height:116px;width:200px}.loginbox .brandLogo{width:240px;height:128px}}
+
+
+/* v5.8 polish: safer navigation, search results, and responsive field layout */
+.dashboardGrid{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.reportGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.searchGrid{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.searchHit{text-align:left;color:var(--text)}
+.searchHit span{display:block;margin-top:10px;color:var(--gold2);font-size:28px;font-weight:850}
+.photo .pbody b{display:block;line-height:1.15;overflow-wrap:anywhere}
+.table{min-width:720px}
+.card{overflow:auto}
+@media(max-width:1100px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dashboardGrid,.reportGrid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .topbar{align-items:stretch;flex-wrap:wrap}
+  .search{order:3;max-width:none}
+  .top-actions{margin-left:auto}
+  .stats{grid-template-columns:1fr}
+  .photos{grid-template-columns:repeat(auto-fill,minmax(145px,1fr))}
+  .photo img{height:124px}
+  .between{align-items:flex-start;flex-direction:column}
+  .between .btn{align-self:flex-start}
+  h1{font-size:28px}
+  .content{padding:16px}
+  .card{border-radius:16px}
+  .table{font-size:14px}
+}

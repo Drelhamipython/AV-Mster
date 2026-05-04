@@ -1,7 +1,7 @@
 {
-  "name": "Amin Ventures Field Cloud",
+  "name": "Amin Ventures Field App",
   "short_name": "AV Field",
-  "description": "Cloud-based field management PWA for Amin Ventures.",
+  "description": "Field management PWA for Amin Ventures.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
