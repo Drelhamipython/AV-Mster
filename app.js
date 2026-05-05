@@ -46,8 +46,8 @@ const App = (() => {
     $('#signup').onclick=async()=>{const email=$('#email').value,password=$('#password').value; const {data,error}=await sb.auth.signUp({email,password}); if(error)return toast(error.message); if(data.user){await sb.from('profiles').upsert({id:data.user.id,email,full_name:email.split('@')[0],role:'admin'}); toast('Account created. Check email if Supabase requires confirmation, then sign in.')}};
   }
   function renderShell(){
-    document.body.innerHTML=`<div class="app"><aside class="sidebar" id="side"><div class="logo"><img class="brandLogo" src="assets/amin-logo-full.png" alt="Amin Ventures full logo"></div><nav class="nav">${navBtn('dashboard','⌂','Dashboard')}${navBtn('projects','▣','Projects')}${navBtn('site_reports','◷','Site Reports')}${navBtn('plans','▤','Plans')}${navBtn('tasks','☑','Punch List')}${navBtn('photos','▧','Photos')}${navBtn('daily_logs','◷','Daily Logs')}${navBtn('rfis','?','RFIs')}${navBtn('subcontractors','♟','Subcontractors')}${navBtn('reports','▥','Reports')}${navBtn('users','◉','Team / Roles')}</nav><div class="userbox"><b>${esc(profile.full_name||profile.email)}</b><br>${esc(profile.role)}<br><span class="muted">${esc(profile.email)}</span><br><br><div class="muted" style="margin-top:10px">AV Field v5.23 - Connected</div><button class="btn ghost" id="signout">Sign out</button></div></aside><main class="main"><header class="topbar"><button class="btn mobileMenu" id="menu">☰</button><input class="search" id="search" value="${esc(searchTerm)}" placeholder="Search projects, tasks, plans..."><div class="top-actions"><button class="btn" id="sync">Sync</button><button class="btn gold" id="quickTask">Site Report</button></div></header><section class="content" id="view"></section></main></div>`;
-    $('#signout').onclick=async()=>{await sb.auth.signOut();location.reload()}; $('#sync').onclick=async()=>{await loadAll(); renderView();}; $('#quickTask').onclick=()=>openForm('site_reports'); $('#menu').onclick=()=>$('#side').classList.toggle('open'); $('#search').oninput=e=>{searchTerm=e.target.value.trim(); renderView();}; document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{active=b.dataset.nav;searchTerm='';renderShell()}); renderView();
+    document.body.innerHTML=`<div class="app"><aside class="sidebar" id="side"><div class="logo"><img class="brandLogo" src="assets/amin-logo-full.png" alt="Amin Ventures full logo"></div><nav class="nav">${navBtn('dashboard','⌂','Dashboard')}${navBtn('projects','▣','Projects')}${navBtn('site_reports','◷','Site Reports')}${navBtn('plans','▤','Plans')}${navBtn('tasks','☑','Punch List')}${navBtn('photos','▧','Photos')}${navBtn('daily_logs','◷','Daily Logs')}${navBtn('rfis','?','RFIs')}${navBtn('subcontractors','♟','Subcontractors')}${navBtn('reports','▥','Reports')}${navBtn('users','◉','Team / Roles')}</nav><div class="userbox"><b>${esc(profile.full_name||profile.email)}</b><br>${esc(profile.role)}<br><span class="muted">${esc(profile.email)}</span><br><br><div class="muted" style="margin-top:10px">AV Field v5.27 - Connected</div><button class="btn ghost" id="signout">Sign out</button></div></aside><button class="navScrim" id="navScrim" aria-label="Close menu"></button><main class="main"><header class="topbar"><button class="btn mobileMenu" id="menu">☰</button><input class="search" id="search" value="${esc(searchTerm)}" placeholder="Search projects, tasks, plans..."><div class="top-actions"><button class="btn" id="sync">Sync</button><button class="btn gold" id="quickTask">Site Report</button></div></header><section class="content" id="view"></section></main></div>`;
+    $('#signout').onclick=async()=>{await sb.auth.signOut();location.reload()}; $('#sync').onclick=async()=>{await loadAll(); renderView();}; $('#quickTask').onclick=()=>openForm('site_reports'); $('#menu').onclick=()=>$('#side').classList.toggle('open'); $('#navScrim').onclick=()=>$('#side').classList.remove('open'); $('#search').oninput=e=>{searchTerm=e.target.value.trim(); renderView();}; document.querySelectorAll('[data-nav]').forEach(b=>b.onclick=()=>{active=b.dataset.nav;searchTerm='';renderShell()}); renderView();
   }
   function navBtn(k,i,l){return `<button data-nav="${k}" class="${active===k?'active':''}">${l}</button>`}
   function renderView(){
@@ -222,7 +222,52 @@ const App = (() => {
   async function saveSiteReport(recordId){let obj=collect('site_reports'); if(!obj.project_id)return toast('Choose a project before saving the site report.'); obj.submitted_by=user?.id||null; obj.submitted_by_name=profile?.full_name||profile?.email||null; obj.submitted_by_email=profile?.email||user?.email||null; const res=recordId? await sb.from('site_reports').update(obj).eq('id',recordId).select().single(): await sb.from('site_reports').insert(obj).select().single(); if(res.error)return toast(res.error.message); const files=[...selectedPhotoFiles]; if(files.length){const up=await uploadReportPhotos(res.data,files); if(up.error)return toast(up.error.message);} selectedPhotoFiles=[]; $('.modal').remove(); await loadAll(); renderView()}
   async function savePhotos(){const files=[...selectedPhotoFiles]; if(!files.length)return toast('Choose at least one photo.'); const meta=collect('photos'); if(!meta.project_id)return toast('Choose a project before saving photos.'); for(const f of files){const safeName=f.name.replace(/[^a-z0-9_.-]/gi,'_'); const path=`${meta.project_id}/${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName}`; const up=await sb.storage.from('jobsite-photos').upload(path,f,{upsert:false,contentType:f.type||'image/jpeg'}); if(up.error)return toast(up.error.message); const signed=await sb.storage.from('jobsite-photos').createSignedUrl(path, 60*60*24*365); if(signed.error)return toast(signed.error.message); const photoUrl=signed.data?.signedUrl||''; const photoRecord={...meta,url:photoUrl,storage_path:path,file_name:f.name,file_size:f.size,mime_type:f.type||'image/jpeg',uploaded_by:user?.id||null}; const ins=await sb.from('photos').insert(photoRecord); if(ins.error)return toast(ins.error.message); } selectedPhotoFiles=[]; $('.modal').remove(); await loadAll(); renderView()}
   async function delRecord(t,recordId){if(!canEdit())return toast('Your role does not allow deleting.'); if(!confirm('Delete this item? This cannot be undone.'))return; if(t==='projects'){await Promise.all(['plan_files','site_reports','plans','tasks','photos','daily_logs','rfis'].map(x=>sb.from(x).delete().eq('project_id',recordId)))} if(t==='plans'){const files=cache.plan_files.filter(x=>x.plan_id===recordId); const paths=files.map(f=>f.storage_path).filter(Boolean); if(paths.length) await sb.storage.from('jobsite-photos').remove(paths); await sb.from('plan_files').delete().eq('plan_id',recordId);} if(t==='tasks'){const photos=cache.photos.filter(x=>x.task_id===recordId); const paths=photos.map(p=>p.storage_path).filter(Boolean); if(paths.length) await sb.storage.from('jobsite-photos').remove(paths); await sb.from('photos').delete().eq('task_id',recordId);} if(t==='daily_logs'){const photos=cache.photos.filter(x=>x.daily_log_id===recordId); const paths=photos.map(p=>p.storage_path).filter(Boolean); if(paths.length) await sb.storage.from('jobsite-photos').remove(paths); await sb.from('photos').delete().eq('daily_log_id',recordId);} if(t==='site_reports'){const photos=cache.photos.filter(x=>x.report_id===recordId); const paths=photos.map(p=>p.storage_path).filter(Boolean); if(paths.length) await sb.storage.from('jobsite-photos').remove(paths); await sb.from('photos').delete().eq('report_id',recordId);} if(t==='photos'){const p=cache.photos.find(x=>x.id===recordId); if(p?.storage_path) await sb.storage.from('jobsite-photos').remove([p.storage_path]);} const {error}=await sb.from(t).delete().eq('id',recordId); if(error)return toast(error.message); await loadAll(); renderView()}
-  function exportCSV(t){const rows=cache[t]||[]; if(!rows.length)return toast('No data.'); const cols=Object.keys(rows[0]); const csv=[cols.join(','),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replaceAll('"','""')}"`).join(','))].join('\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download=`amin_ventures_${t}.csv`; a.click()}
+  function relatedPhotosFor(t,r){
+    if(t==='site_reports') return cache.photos.filter(p=>p.report_id===r.id);
+    if(t==='tasks') return cache.photos.filter(p=>p.task_id===r.id);
+    if(t==='daily_logs') return cache.photos.filter(p=>p.daily_log_id===r.id);
+    if(t==='projects') return cache.photos.filter(p=>p.project_id===r.id);
+    return [];
+  }
+  function spreadsheetLink(url,label){
+    if(!url) return '';
+    return `=HYPERLINK("${String(url).replaceAll('"','""')}","${String(label).replaceAll('"','""')}")`;
+  }
+  function csvRowsFor(t){
+    return (cache[t]||[]).map(r=>{
+      const out={...r};
+      if(r.project_id) out.project_name=projectName(r.project_id);
+      if(t==='photos'){
+        out.project_name=projectName(r.project_id);
+        delete out.url;
+        out.photo_link=spreadsheetLink(r.url,'Open Photo');
+        out.related_record=r.report_id?'Site Report':r.daily_log_id?'Daily Log':r.task_id?'Punch List':'Photo Library';
+      }
+      const photos=relatedPhotosFor(t,r);
+      if(photos.length){
+        out.photo_count=photos.length;
+        out.photo_file_names=photos.map(p=>p.file_name).filter(Boolean).join(' | ');
+        photos.forEach((p,i)=>{out[`Photo ${i+1}`]=spreadsheetLink(p.url,`Open Photo ${i+1}`)});
+      }
+      if(t==='plans'){
+        const files=cache.plan_files.filter(f=>f.plan_id===r.id);
+        out.file_count=files.length;
+        out.file_names=files.map(f=>f.file_name).filter(Boolean).join(' | ');
+        files.forEach((f,i)=>{out[`File ${i+1}`]=spreadsheetLink(f.url,`Open File ${i+1}`)});
+      }
+      return out;
+    });
+  }
+  function exportCSV(t){
+    const rows=csvRowsFor(t);
+    if(!rows.length)return toast('No data.');
+    const cols=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+    const csv=[cols.join(','),...rows.map(r=>cols.map(c=>`"${String(r[c]??'').replaceAll('"','""')}"`).join(','))].join('\n');
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    a.download=`amin_ventures_${t}.csv`;
+    a.click();
+  }
   async function makePDF(type){
     const {jsPDF}=window.jspdf;
     const doc=new jsPDF({unit:'pt',format:'letter',compress:false});
